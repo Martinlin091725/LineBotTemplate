@@ -44,6 +44,7 @@ func main() {
 		for _, event := range cb.Events {
 			switch e := event.(type) {
 			case webhook.MessageEvent:
+				log.Printf("👀 e.Source 實際型別: %T", e.Source)  // 加這
 				switch message := e.Message.(type) {
 				case webhook.TextMessageContent:
 					// 嘗試從來源斷言為 UserSource，才能取得 UserId

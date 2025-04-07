@@ -48,7 +48,7 @@ func main() {
 				switch message := e.Message.(type) {
 				case webhook.TextMessageContent:
 					// 嘗試從來源斷言為 UserSource，才能取得 UserId
-					if source, ok := e.Source.(*webhook.UserSource); ok {
+					if source, ok := e.Source.(webhook.UserSource); ok {
 						log.Printf("🪪 使用者 UserID：%s", source.UserId)
 					
 						_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{

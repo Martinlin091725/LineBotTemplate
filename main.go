@@ -71,7 +71,7 @@ func main() {
 	// 啟動伺服器
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "8080"
 	}
 	log.Println("🚀 Starting server at port " + port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {

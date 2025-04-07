@@ -1,3 +1,15 @@
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -12,19 +24,15 @@ import (
 )
 
 func main() {
-	bot, err := linebot.New(
-		os.Getenv("LINE_CHANNEL_SECRET"),
+	channelSecret := os.Getenv("LINE_CHANNEL_SECRET")
+	bot, err := messaging_api.NewMessagingApiAPI(
 		os.Getenv("LINE_CHANNEL_ACCESS_TOKEN"),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// 🩺 Health check 路由
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "✅ LineBot webhook is alive")
-	})
-
+	// Setup HTTP Server for receiving requests from LINE platform
 	http.HandleFunc("/callback", func(w http.ResponseWriter, req *http.Request) {
 		log.Println("/callback called...")
 
@@ -39,31 +47,68 @@ func main() {
 			return
 		}
 
+		log.Println("Handling events...")
 		for _, event := range cb.Events {
+			log.Printf("/callback called%+v...\n", event)
+
 			switch e := event.(type) {
 			case webhook.MessageEvent:
 				switch message := e.Message.(type) {
 				case webhook.TextMessageContent:
-					_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
-						ReplyToken: e.ReplyToken,
-						Messages: []messaging_api.MessageInterface{
-							messaging_api.TextMessage{Text: message.Text},
+					if _, err = bot.ReplyMessage(
+						&messaging_api.ReplyMessageRequest{
+							ReplyToken: e.ReplyToken,
+							Messages: []messaging_api.MessageInterface{
+								messaging_api.TextMessage{
+									Text: message.Text,
+								},
+							},
 						},
-					})
-					if err != nil {
-						log.Println("Reply error:", err)
+					); err != nil {
+						log.Print(err)
+					} else {
+						log.Println("Sent text reply.")
 					}
+				case webhook.StickerMessageContent:
+					replyMessage := fmt.Sprintf(
+						"貼圖訊息: sticker id is %s, stickerResourceType is %s", message.StickerId, message.StickerResourceType)
+					if _, err = bot.ReplyMessage(
+						&messaging_api.ReplyMessageRequest{
+							ReplyToken: e.ReplyToken,
+							Messages: []messaging_api.MessageInterface{
+								messaging_api.TextMessage{
+									Text: replyMessage,
+								},
+							},
+						}); err != nil {
+						log.Print(err)
+					} else {
+						log.Println("Sent sticker reply.")
+					}
+				case webhook.MemberJoinedEvent:
+					log.Printf("Member joined: %s\n", e.Source.(webhook.UserSource).UserId)
+				case webhook.MemberLeftEvent:
+					log.Printf("Member joined: %s\n", e.Source.(webhook.UserSource).UserId)
+				case webhook.FollowEvent:
+					log.Printf("Follow event: %s\n", e.Source.(webhook.UserSource).UserId)
+				case webhook.BeaconEvent:
+					log.Printf("Beacon event: %s\n", e.Source.(webhook.UserSource).UserId)
+				default:
+					log.Printf("Unsupported message content: %T\n", e.Message)
 				}
+			default:
+				log.Printf("Unsupported message: %T\n", event)
 			}
 		}
 	})
 
-	// 🚀 啟動伺服器
+	// This is just sample code.
+	// For actual use, you must support HTTPS by using `ListenAndServeTLS`, a reverse proxy or something else.
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "5000"
 	}
-	log.Println("🚀 Starting server at port " + port)
+	fmt.Println("http://localhost:" + port + "/")
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}

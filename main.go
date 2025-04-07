@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	// 🔧 修正變數名稱（大小寫）
+	// ✅ 用你實際設定在 Railway 的環境變數名稱
 	channelSecret := os.Getenv("LINE_CHANNEL_SECRET")
 	bot, err := messaging_api.NewMessagingApiAPI(
 		os.Getenv("LINE_CHANNEL_ACCESS_TOKEN"),
@@ -21,11 +21,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 🩺 Health check 路由
+	// 🩺 Health check
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "✅ LineBot webhook is alive")
 	})
 
+	// 📡 webhook callback
 	http.HandleFunc("/callback", func(w http.ResponseWriter, req *http.Request) {
 		log.Println("/callback called...")
 
@@ -45,21 +46,24 @@ func main() {
 			case webhook.MessageEvent:
 				switch message := e.Message.(type) {
 				case webhook.TextMessageContent:
+					replyText := fmt.Sprintf("✅ 你的 User ID 是：%s\n你說了：%s", e.Source.UserId, message.Text)
+
 					_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 						ReplyToken: e.ReplyToken,
 						Messages: []messaging_api.MessageInterface{
-							messaging_api.TextMessage{Text: message.Text},
+							messaging_api.TextMessage{Text: replyText},
 						},
 					})
 					if err != nil {
-						log.Println("Reply error:", err)
+						log.Println("❌ Reply error:", err)
+					} else {
+						log.Printf("✅ 已回覆 UserID: %s", e.Source.UserId)
 					}
 				}
 			}
 		}
 	})
 
-	// 🚀 啟動伺服器
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"

@@ -45,8 +45,10 @@ func main() {
 				switch message := e.Message.(type) {
 				case webhook.TextMessageContent:
 					userId := e.Source.UserID
-					log.Printf("[UserID] %s sent: %s", userId, message.Text)
-
+					if source, ok := e.Source.(*webhook.UserSource); ok {
+	                                    log.Printf("UserID: %s", source.UserId)
+                                        }
+                                        
 					replyText := message.Text
 					if message.Text == "/test" {
 						replyText = "✅ 推播測試成功！"

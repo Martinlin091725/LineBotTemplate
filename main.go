@@ -51,12 +51,12 @@ func main() {
 						reply := fmt.Sprintf("✅ 你的 User ID 是：%s\n你說了：%s", source.UserId, message.Text)
 						log.Println("👤 UserID:", source.UserId)
 						
-					        _, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
-							ReplyToken: e.ReplyToken,
-							Messages: []messaging_api.MessageInterface{
+					     _, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+							 ReplyToken: e.ReplyToken,
+							 Messages: []messaging_api.MessageInterface{
 								messaging_api.TextMessage{Text: "Your UID is: " + source.UserId},
-							},
-						})
+							 },
+						 })
 						if err != nil {
 							log.Println("❌ Reply error:", err)
 						}

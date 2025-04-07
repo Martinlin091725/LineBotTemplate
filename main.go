@@ -48,21 +48,23 @@ func main() {
 				case webhook.TextMessageContent:
 					// 嘗試從來源斷言為 UserSource，才能取得 UserId
 					if source, ok := e.Source.(*webhook.UserSource); ok {
-						reply := fmt.Sprintf("✅ 你的 User ID 是：%s\n你說了：%s", source.UserId, message.Text)
-						log.Println("👤 UserID:", source.UserId)
-						
-					     _, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
-							 ReplyToken: e.ReplyToken,
-							 Messages: []messaging_api.MessageInterface{
-								messaging_api.TextMessage{Text: "Your UID is: " + source.UserId},
-							 },
-						 })
+						log.Printf("🪪 使用者 UserID：%s", source.UserId)
+					
+						_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+							ReplyToken: e.ReplyToken,
+							Messages: []messaging_api.MessageInterface{
+								messaging_api.TextMessage{
+									Text: fmt.Sprintf("✅ 你的 User ID 是：%s\n你說了：%s", source.UserId, message.Text),
+								},
+							},
+						})
 						if err != nil {
-							log.Println("❌ Reply error:", err)
+							log.Println("❌ 回覆失敗:", err)
 						}
 					} else {
-						log.Println("⚠️ 來源不是 User，可能是群組或聊天室")
+						log.Println("⚠️ 無法轉換為 UserSource（可能是群聊或聊天室）")
 					}
+					
 				}
 			}
 		}

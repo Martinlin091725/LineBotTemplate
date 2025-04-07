@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-	// 正確讀取環境變數
 	channelSecret := os.Getenv("LINE_CHANNEL_SECRET")
 	bot, err := messaging_api.NewMessagingApiAPI(
 		os.Getenv("LINE_CHANNEL_ACCESS_TOKEN"),
@@ -21,18 +20,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 健康檢查路由
+	// Health Check
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "✅ LineBot webhook is alive")
 	})
 
-	// LINE webhook callback
 	http.HandleFunc("/callback", func(w http.ResponseWriter, req *http.Request) {
-		log.Println("📩 /callback called...")
+		log.Println("[Webhook] /callback triggered")
 
 		cb, err := webhook.ParseRequest(channelSecret, req)
 		if err != nil {
-			log.Printf("❌ Cannot parse request: %+v\n", err)
+			log.Printf("Failed to parse webhook: %+v", err)
 			if errors.Is(err, webhook.ErrInvalidSignature) {
 				w.WriteHeader(400)
 			} else {
@@ -46,34 +44,33 @@ func main() {
 			case webhook.MessageEvent:
 				switch message := e.Message.(type) {
 				case webhook.TextMessageContent:
-					// 嘗試從來源斷言為 UserSource，才能取得 UserId
-					if source, ok := e.Source.(*webhook.UserSource); ok {
-						reply := fmt.Sprintf("✅ 你的 User ID 是：%s\n你說了：%s", source.UserId, message.Text)
-						log.Println("👤 UserID:", source.UserId)
+					userId := e.Source.UserID
+					log.Printf("[UserID] %s sent: %s", userId, message.Text)
 
-						_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
-							ReplyToken: e.ReplyToken,
-							Messages: []messaging_api.MessageInterface{
-								messaging_api.TextMessage{Text: reply},
-							},
-						})
-						if err != nil {
-							log.Println("❌ Reply error:", err)
-						}
-					} else {
-						log.Println("⚠️ 來源不是 User，可能是群組或聊天室")
+					replyText := message.Text
+					if message.Text == "/test" {
+						replyText = "✅ 推播測試成功！"
+					}
+
+					_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+						ReplyToken: e.ReplyToken,
+						Messages: []messaging_api.MessageInterface{
+							messaging_api.TextMessage{Text: replyText},
+						},
+					})
+					if err != nil {
+						log.Println("Reply error:", err)
 					}
 				}
 			}
 		}
 	})
 
-	// 啟動伺服器
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
 	}
-	log.Println("🚀 Starting server at port " + port)
+	log.Println("🚀 Listening on port " + port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}

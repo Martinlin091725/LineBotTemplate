@@ -13,9 +13,9 @@ import (
 
 func main() {
 	// 🔧 修正變數名稱（大小寫）
-	channelSecret := os.Getenv("CHANNEL_SECRET")
+	channelSecret := os.Getenv("LINE_CHANNEL_SECRET")
 	bot, err := messaging_api.NewMessagingApiAPI(
-		os.Getenv("CHANNEL_ACCESS_TOKEN"),
+		os.Getenv("LINE_CHANNEL_ACCESS_TOKEN"),
 	)
 	if err != nil {
 		log.Fatal(err)

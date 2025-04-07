@@ -28,7 +28,19 @@ func main() {
 
 	http.HandleFunc("/callback", func(w http.ResponseWriter, req *http.Request) {
 		log.Println("/callback called...")
+               for _, event := range events {
+                    if event.Type == linebot.EventTypeMessage {
+                       if message, ok := event.Message.(*linebot.TextMessage); ok {
+                         log.Printf("UserID: %s, Message: %s", event.Source.UserID, message.Text)
 
+                   // 回傳你的 UserID 給你自己
+                    if _, err := bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage("你的 User ID 是："+event.Source.UserID)).Do(); err != nil {
+                    log.Print(err)
+                                       }
+                                   }
+                                }
+                             }
+		
 		cb, err := webhook.ParseRequest(channelSecret, req)
 		if err != nil {
 			log.Printf("Cannot parse request: %+v\n", err)
